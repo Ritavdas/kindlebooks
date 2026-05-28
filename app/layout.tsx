@@ -3,8 +3,27 @@ import Link from "next/link";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+  ),
   title: "KindleBeam — your personal book beam",
-  description: "Search, collect, and beam EPUBs straight to your Kindle.",
+  description:
+    "Search millions of EPUBs, build your shelf, and beam them straight to your Kindle in one tap.",
+  applicationName: "KindleBeam",
+  openGraph: {
+    type: "website",
+    siteName: "KindleBeam",
+    title: "KindleBeam — your personal book beam",
+    description:
+      "Search millions of EPUBs, build your shelf, and beam them straight to your Kindle in one tap.",
+    url: "/",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "KindleBeam — your personal book beam",
+    description:
+      "Search millions of EPUBs, build your shelf, and beam them straight to your Kindle in one tap.",
+  },
 };
 
 export default function RootLayout({
