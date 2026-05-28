@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface SearchResult {
   md5: string;
@@ -15,6 +15,19 @@ interface SearchResult {
   sources: string[];
 }
 
+interface ShelfBook {
+  title: string;
+  author: string | null;
+  coverUrl: string | null;
+  query: string;
+}
+
+interface Shelf {
+  id: string;
+  title: string;
+  books: ShelfBook[];
+}
+
 type DlState = "idle" | "downloading" | "done" | "error";
 
 export default function SearchPage() {
@@ -22,17 +35,26 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [searched, setSearched] = useState(false);
   const [dl, setDl] = useState<Record<string, DlState>>({});
   const [dlMsg, setDlMsg] = useState<Record<string, string>>({});
+  const [shelves, setShelves] = useState<Shelf[]>([]);
 
-  async function runSearch(e: React.FormEvent) {
-    e.preventDefault();
-    if (!query.trim()) return;
+  useEffect(() => {
+    fetch("/api/shelves")
+      .then((r) => r.json())
+      .then((d) => setShelves(d.shelves || []))
+      .catch(() => {});
+  }, []);
+
+  async function runSearch(q: string) {
+    if (!q.trim()) return;
     setLoading(true);
     setError(null);
     setResults([]);
+    setSearched(true);
     try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Search failed");
       setResults(data.results);
@@ -41,6 +63,17 @@ export default function SearchPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    runSearch(query);
+  }
+
+  function pickShelfBook(b: ShelfBook) {
+    setQuery(b.query);
+    runSearch(b.query);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function download(r: SearchResult) {
@@ -76,7 +109,7 @@ export default function SearchPage() {
   return (
     <div>
       <h1>Search Anna&apos;s Archive (EPUB)</h1>
-      <form className="search-bar" onSubmit={runSearch}>
+      <form className="search-bar" onSubmit={onSubmit}>
         <input
           type="text"
           placeholder="Title, author, ISBN…"
@@ -89,8 +122,45 @@ export default function SearchPage() {
       </form>
 
       {error && <div className="error">{error}</div>}
-      {!loading && !error && results.length === 0 && (
-        <div className="empty">Search for a book to get started.</div>
+
+      {!searched && !loading && (
+        <div className="shelves">
+          {shelves.length === 0 && (
+            <div className="empty">Loading recommendations…</div>
+          )}
+          {shelves.map((shelf) => (
+            <section className="shelf" key={shelf.id}>
+              <h2 className="shelf-title">{shelf.title}</h2>
+              <div className="shelf-row">
+                {shelf.books.map((b, i) => (
+                  <button
+                    className="shelf-card"
+                    key={`${shelf.id}-${i}`}
+                    onClick={() => pickShelfBook(b)}
+                    title={`${b.title}${b.author ? " — " + b.author : ""}`}
+                  >
+                    {b.coverUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img className="shelf-cover" src={b.coverUrl} alt={b.title} />
+                    ) : (
+                      <div className="shelf-cover shelf-cover-fallback">
+                        {b.title.slice(0, 1)}
+                      </div>
+                    )}
+                    <div className="shelf-book-title">{b.title}</div>
+                    {b.author && (
+                      <div className="shelf-book-author">{b.author}</div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      )}
+
+      {searched && !loading && !error && results.length === 0 && (
+        <div className="empty">No EPUBs found. Try another title.</div>
       )}
 
       {results.map((r) => {

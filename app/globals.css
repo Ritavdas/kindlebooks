@@ -203,3 +203,78 @@ button:disabled {
   font-size: 13px;
   color: var(--muted);
 }
+
+.shelves {
+  margin-top: 8px;
+}
+
+.shelf {
+  margin-bottom: 28px;
+}
+
+.shelf-title {
+  font-size: 16px;
+  margin: 0 0 12px;
+}
+
+.shelf-row {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scrollbar-width: thin;
+}
+
+.shelf-card {
+  flex: 0 0 120px;
+  width: 120px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  color: var(--text);
+}
+
+.shelf-cover {
+  width: 120px;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 6px;
+  background: #20242d;
+  display: block;
+  transition: transform 0.12s ease;
+}
+
+.shelf-card:hover .shelf-cover {
+  transform: translateY(-3px);
+}
+
+.shelf-cover-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.shelf-book-title {
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 6px;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.shelf-book-author {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

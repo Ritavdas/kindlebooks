@@ -66,6 +66,18 @@ Open http://localhost:3000.
 - Kindle email attachments are capped at **50 MB** (fine for EPUBs).
 - EPUBs are now natively supported by Send-to-Kindle; no MOBI conversion needed.
 
+## Homepage recommendations
+
+The homepage shows curated shelves so it isn't empty before you search:
+
+- **Trending today** and genre shelves (Self-improvement, Science, Philosophy,
+  Fantasy, Biographies) come from the free [Open Library](https://openlibrary.org)
+  API — no key required.
+- **NYT Bestseller** shelves appear only if you set `NYT_API_KEY`.
+
+Click any cover to instantly search Anna's Archive for that title. Shelves are
+cached in-memory for 6 hours.
+
 ## Project structure
 
 ```
@@ -76,8 +88,10 @@ app/
   api/download        POST – RapidAPI /download → ./library + DB
   api/send            POST – email EPUB to Kindle
   api/library         GET  – list downloaded books
+  api/shelves         GET  – curated homepage shelves (Open Library + NYT)
 lib/
   anna.ts             RapidAPI search + download client
+  shelves.ts          Open Library / NYT recommendation shelves
   db.ts               SQLite (better-sqlite3)
   mailer.ts           nodemailer (Gmail SMTP)
 ```
