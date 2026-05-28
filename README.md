@@ -53,8 +53,11 @@ Open http://localhost:3000.
 ## Notes & limitations
 
 - **Search** and **download** both go through the RapidAPI Anna's Archive
-  wrapper (`/search` and `/download`). No HTML scraping. If the API's response
-  shape changes, update `lib/anna.ts`.
+  wrapper (`/search` and `/download`). No HTML scraping. Each result includes
+  `title`, `author`, `md5`, `imgUrl` (thumbnail), `size`, `format`, `year`,
+  `genre`, and `sources` — all of which are shown in the UI.
+- The Anna's Archive **website** shows a "saves"/downloads count, but the
+  RapidAPI wrapper does **not** return it, so it can't be displayed here.
 - RapidAPI plans enforce **monthly request quotas / rate limits**; the app
   surfaces `429` errors when you hit them.
 - Amazon sends **no delivery confirmation** — "Sent ✓" means your SMTP server

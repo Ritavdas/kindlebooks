@@ -74,7 +74,15 @@ export default function LibraryPage() {
         const state = send[b.md5] || "idle";
         return (
           <div className="card" key={b.md5}>
-            <div>
+            <div className="cover-wrap">
+              {b.img_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img className="cover" src={b.img_url} alt={b.title} />
+              ) : (
+                <div className="cover cover-fallback">{b.title.slice(0, 1)}</div>
+              )}
+            </div>
+            <div className="card-body">
               <div className="title">{b.title}</div>
               <div className="author">{b.author || "Unknown author"}</div>
               <div className="meta">
