@@ -106,31 +106,64 @@ export default function SearchPage() {
     }
   }
 
+  const marqueeItems = shelves.flatMap((s) => s.books).slice(0, 18);
+
   return (
     <div>
-      <h1>Search Anna&apos;s Archive (EPUB)</h1>
-      <form className="search-bar" onSubmit={onSubmit}>
-        <input
-          type="text"
-          placeholder="Title, author, ISBN…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-        <button type="submit" disabled={loading}>
-          {loading ? "Searching…" : "Search"}
-        </button>
-      </form>
+      <section className="hero">
+        <span className="eyebrow">❦ search · collect · beam</span>
+        <h1 className="hero-title">
+          Every book you crave,
+          <br />
+          <em>beamed to your Kindle.</em>
+        </h1>
+        <p className="hero-sub">
+          Search a vast archive of EPUBs, build your private library, and send
+          any title to your Kindle in one tap.
+        </p>
+
+        <form className="search-bar" onSubmit={onSubmit}>
+          <input
+            type="text"
+            placeholder="Search a title, author or ISBN…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          <button type="submit" disabled={loading}>
+            {loading ? "Searching…" : "Search"}
+          </button>
+        </form>
+
+        {!searched && marqueeItems.length > 0 && (
+          <div className="marquee">
+            <div className="marquee-track">
+              {[...marqueeItems, ...marqueeItems].map((b, i) => (
+                <span
+                  className="marquee-pill"
+                  key={i}
+                  onClick={() => pickShelfBook(b)}
+                >
+                  {b.title}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
 
       {error && <div className="error">{error}</div>}
 
       {!searched && !loading && (
         <div className="shelves">
           {shelves.length === 0 && (
-            <div className="empty">Loading recommendations…</div>
+            <div className="spinner">Curating your shelves…</div>
           )}
           {shelves.map((shelf) => (
             <section className="shelf" key={shelf.id}>
-              <h2 className="shelf-title">{shelf.title}</h2>
+              <div className="section-head">
+                <h2 className="shelf-title">{shelf.title}</h2>
+                <span className="section-hint">scroll →</span>
+              </div>
               <div className="shelf-row">
                 {shelf.books.map((b, i) => (
                   <button
@@ -159,70 +192,79 @@ export default function SearchPage() {
         </div>
       )}
 
+      {loading && <div className="spinner">Scanning the archive…</div>}
+
       {searched && !loading && !error && results.length === 0 && (
         <div className="empty">No EPUBs found. Try another title.</div>
       )}
 
-      {results.map((r) => {
-        const state = dl[r.md5] || "idle";
-        return (
-          <div className="card" key={r.md5}>
-            <div className="cover-wrap">
-              {r.imgUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  className="cover"
-                  src={r.imgUrl}
-                  alt={r.title}
-                  style={{ background: r.imgFallbackColor || "#20242d" }}
-                />
-              ) : (
-                <div
-                  className="cover cover-fallback"
-                  style={{ background: r.imgFallbackColor || "#20242d" }}
-                >
-                  {r.title.slice(0, 1)}
+      {searched && results.length > 0 && (
+        <div className="results">
+          <h2 className="results-head">
+            {results.length} result{results.length === 1 ? "" : "s"} for “{query}”
+          </h2>
+          {results.map((r) => {
+            const state = dl[r.md5] || "idle";
+            return (
+              <div className="card" key={r.md5}>
+                <div className="cover-wrap">
+                  {r.imgUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      className="cover"
+                      src={r.imgUrl}
+                      alt={r.title}
+                      style={{ background: r.imgFallbackColor || "#20242d" }}
+                    />
+                  ) : (
+                    <div
+                      className="cover cover-fallback"
+                      style={{ background: r.imgFallbackColor || "#20242d" }}
+                    >
+                      {r.title.slice(0, 1)}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-            <div className="card-body">
-              <div className="title">{r.title}</div>
-              <div className="author">{r.author || "Unknown author"}</div>
-              <div className="meta">
-                <span className="tag">{r.ext}</span>
-                {r.size && <span className="tag">{r.size}</span>}
-                {r.year && <span className="tag">{r.year}</span>}
-                {r.genre && <span className="tag">{r.genre}</span>}
-                {r.sources.map((s) => (
-                  <span className="tag tag-src" key={s}>
-                    {s}
-                  </span>
-                ))}
+                <div className="card-body">
+                  <div className="title">{r.title}</div>
+                  <div className="author">{r.author || "Unknown author"}</div>
+                  <div className="meta">
+                    <span className="tag">{r.ext}</span>
+                    {r.size && <span className="tag">{r.size}</span>}
+                    {r.year && <span className="tag">{r.year}</span>}
+                    {r.genre && <span className="tag">{r.genre}</span>}
+                    {r.sources.map((s) => (
+                      <span className="tag tag-src" key={s}>
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="actions">
+                  <button
+                    onClick={() => download(r)}
+                    disabled={state === "downloading" || state === "done"}
+                  >
+                    {state === "downloading"
+                      ? "Downloading…"
+                      : state === "done"
+                      ? "Downloaded ✓"
+                      : "Download"}
+                  </button>
+                  {dlMsg[r.md5] && (
+                    <span
+                      className={state === "error" ? "error" : "muted"}
+                      style={{ fontSize: 12 }}
+                    >
+                      {dlMsg[r.md5]}
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
-            <div className="actions">
-              <button
-                onClick={() => download(r)}
-                disabled={state === "downloading" || state === "done"}
-              >
-                {state === "downloading"
-                  ? "Downloading…"
-                  : state === "done"
-                  ? "Downloaded ✓"
-                  : "Download"}
-              </button>
-              {dlMsg[r.md5] && (
-                <span
-                  className={state === "error" ? "error" : "muted"}
-                  style={{ fontSize: 12 }}
-                >
-                  {dlMsg[r.md5]}
-                </span>
-              )}
-            </div>
-          </div>
-        );
-      })}
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

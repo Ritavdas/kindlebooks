@@ -64,7 +64,10 @@ export default function LibraryPage() {
 
   return (
     <div>
-      <h1>Library</h1>
+      <h1 className="page-title">Your Library</h1>
+      <p className="page-lead">
+        Everything you&apos;ve collected — beam any of it to your Kindle.
+      </p>
       {loading && <div className="spinner">Loading…</div>}
       {!loading && books.length === 0 && (
         <div className="empty">No books yet. Download some from Search.</div>
