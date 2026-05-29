@@ -33,9 +33,10 @@ RUN useradd --system --uid 1001 nextjs
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
+COPY entrypoint.sh ./entrypoint.sh
 
-RUN mkdir -p /data/library && chown -R nextjs:nextjs /data
+RUN chmod +x entrypoint.sh && chown nextjs:nextjs entrypoint.sh
 USER nextjs
 
 EXPOSE 3000
-CMD ["node", "server.js"]
+CMD ["./entrypoint.sh"]
