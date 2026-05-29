@@ -7,8 +7,6 @@ import {
   uploadBookFile,
 } from "@/lib/db";
 
-export const dynamic = "force-dynamic";
-
 function sanitize(name: string): string {
   return name.replace(/[^\w\-. ]+/g, "_").replace(/\s+/g, " ").trim().slice(0, 150);
 }

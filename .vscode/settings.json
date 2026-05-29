@@ -2,6 +2,8 @@
     "workbench.colorCustomizations": {
         "[Material Theme Darker]": {},
         "[Material Theme Darker High Contrast]": {},
+        "statusBar.noFolderBackground": "#1F321F",
+        "statusBar.noFolderForeground": "#F9FBF9",
         "activityBar.background": "#1F321F",
         "titleBar.activeBackground": "#2B472B",
         "titleBar.activeForeground": "#F9FBF9",
@@ -10,8 +12,6 @@
         "statusBar.background": "#1F321F",
         "statusBar.foreground": "#F9FBF9",
         "statusBar.debuggingBackground": "#1F321F",
-        "statusBar.debuggingForeground": "#F9FBF9",
-        "statusBar.noFolderBackground": "#1F321F",
-        "statusBar.noFolderForeground": "#F9FBF9"
+        "statusBar.debuggingForeground": "#F9FBF9"
     }
 }

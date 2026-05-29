@@ -1,3 +1,5 @@
+import { cacheLife, cacheTag } from "next/cache";
+
 export interface ShelfBook {
   title: string;
   author: string | null;
@@ -10,9 +12,6 @@ export interface Shelf {
   title: string;
   books: ShelfBook[];
 }
-
-const TTL_MS = 1000 * 60 * 60 * 6; // 6 hours
-const cache = new Map<string, { at: number; data: Shelf[] }>();
 
 function olCover(id: number | undefined | null): string | null {
   return id ? `https://covers.openlibrary.org/b/id/${id}-M.jpg` : null;
@@ -120,8 +119,9 @@ async function nytShelves(): Promise<Shelf[]> {
 }
 
 export async function getShelves(): Promise<Shelf[]> {
-  const hit = cache.get("shelves");
-  if (hit && Date.now() - hit.at < TTL_MS) return hit.data;
+  "use cache";
+  cacheLife({ stale: 3600, revalidate: 21600, expire: 86400 });
+  cacheTag("shelves");
 
   const results = await Promise.all([
     nytShelves(),
@@ -135,6 +135,5 @@ export async function getShelves(): Promise<Shelf[]> {
     else if (r) shelves.push(r);
   }
 
-  cache.set("shelves", { at: Date.now(), data: shelves });
   return shelves;
 }

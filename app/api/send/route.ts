@@ -2,8 +2,6 @@ import { NextResponse } from "next/server";
 import { sendToKindle } from "@/lib/mailer";
 import { downloadBookFile, getBook, markSent } from "@/lib/db";
 
-export const dynamic = "force-dynamic";
-
 export async function POST(request: Request) {
   try {
     const { md5 } = (await request.json()) as { md5?: string };

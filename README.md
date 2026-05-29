@@ -142,16 +142,16 @@ cached in-memory for 6 hours.
 
 ```
 app/
-  page.tsx            Search UI
+  page.tsx            Search UI (Server Component → HomeClient)
+  HomeClient.tsx      Client search/shelf UI
   library/page.tsx    Library + Send-to-Kindle UI
   api/search          GET  – RapidAPI /search (EPUB)
   api/download        POST – RapidAPI /download → Supabase Storage + Postgres
   api/send            POST – Supabase Storage EPUB → email to Kindle
   api/library         GET  – list saved books
-  api/shelves         GET  – curated homepage shelves (Open Library + NYT)
 lib/
   anna.ts             RapidAPI search + download client
-  shelves.ts          Open Library / NYT recommendation shelves
+  shelves.ts          Open Library / NYT shelves (cached via "use cache")
   db.ts               Supabase Postgres + Storage helpers
   mailer.ts           nodemailer SMTP sender
 supabase/
