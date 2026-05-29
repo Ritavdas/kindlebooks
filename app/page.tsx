@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { HOME_RESET_EVENT } from "./constants";
 
 interface SearchResult {
   md5: string;
@@ -45,6 +46,20 @@ export default function SearchPage() {
       .then((r) => r.json())
       .then((d) => setShelves(d.shelves || []))
       .catch(() => {});
+  }, []);
+
+  function resetToHome() {
+    setQuery("");
+    setResults([]);
+    setError(null);
+    setSearched(false);
+    setLoading(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  useEffect(() => {
+    window.addEventListener(HOME_RESET_EVENT, resetToHome);
+    return () => window.removeEventListener(HOME_RESET_EVENT, resetToHome);
   }, []);
 
   async function runSearch(q: string) {
@@ -127,7 +142,11 @@ export default function SearchPage() {
             type="text"
             placeholder="Search a title, author or ISBN…"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              const v = e.target.value;
+              setQuery(v);
+              if (v.trim() === "") resetToHome();
+            }}
           />
           <button type="submit" disabled={loading}>
             {loading ? "Searching…" : "Search"}

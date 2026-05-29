@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import HomeLink from "./HomeLink";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -54,14 +55,14 @@ export default function RootLayout({
         <div className="bg-grain" aria-hidden="true" />
 
         <header className="header">
-          <Link href="/" className="brand">
+          <HomeLink className="brand">
             <span className="brand-mark">&#10086;</span>
             <span className="brand-text">
               Kindle<span className="brand-accent">Beam</span>
             </span>
-          </Link>
+          </HomeLink>
           <nav className="nav">
-            <Link href="/">Discover</Link>
+            <HomeLink>Discover</HomeLink>
             <Link href="/library">Library</Link>
             <span className="nav-status">
               <span className="dot" /> live
