@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import fs from "node:fs";
 import { sendToKindle } from "@/lib/mailer";
-import { getBook, markSent } from "@/lib/db";
+import { downloadBookFile, getBook, markSent } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -12,18 +11,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing md5" }, { status: 400 });
     }
 
-    const book = getBook(md5);
-    if (!book || !fs.existsSync(book.path)) {
+    const book = await getBook(md5);
+    if (!book) {
       return NextResponse.json(
         { error: "Book not found in library" },
         { status: 404 }
       );
     }
 
-    await sendToKindle({ filePath: book.path, filename: book.filename });
+    const content = await downloadBookFile(book.path);
+    await sendToKindle({ content, filename: book.filename });
 
     const sentAt = new Date().toISOString();
-    markSent(md5, sentAt);
+    await markSent(md5, sentAt);
 
     return NextResponse.json({ ok: true, sent_at: sentAt });
   } catch (err) {

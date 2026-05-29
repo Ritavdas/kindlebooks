@@ -9,15 +9,13 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "better-sqlite3": "^11.8.1",
+    "@supabase/supabase-js": "^2.106.2",
     "next": "^15.1.6",
     "nodemailer": "^6.9.16",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@flydotio/dockerfile": "^0.7.10",
-    "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.10.7",
     "@types/nodemailer": "^6.4.17",
     "@types/react": "^19.0.7",

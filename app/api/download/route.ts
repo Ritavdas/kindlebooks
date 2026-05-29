@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import fs from "node:fs";
-import path from "node:path";
-import { Readable } from "node:stream";
-import { finished } from "node:stream/promises";
 import { getFastDownloadUrl } from "@/lib/anna";
-import { ensureLibraryDir, insertBook, getBook } from "@/lib/db";
+import {
+  getBook,
+  insertBook,
+  makeStoragePath,
+  uploadBookFile,
+} from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -25,8 +26,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing md5 or title" }, { status: 400 });
     }
 
-    const existing = getBook(md5);
-    if (existing && fs.existsSync(existing.path)) {
+    const existing = await getBook(md5);
+    if (existing) {
       return NextResponse.json({ book: existing, alreadyDownloaded: true });
     }
 
@@ -40,28 +41,26 @@ export async function POST(request: Request) {
       );
     }
 
-    const dir = ensureLibraryDir();
     const base = sanitize(`${title}${body.author ? " - " + body.author : ""}`);
     const filename = `${base}.epub`;
-    const filePath = path.join(dir, `${md5}-${filename}`);
+    const storagePath = makeStoragePath(md5, filename);
 
-    const fileStream = fs.createWriteStream(filePath);
-    await finished(Readable.fromWeb(res.body as any).pipe(fileStream));
+    const buffer = Buffer.from(await res.arrayBuffer());
+    await uploadBookFile(storagePath, buffer);
 
-    const size = fs.statSync(filePath).size;
     const row = {
       md5,
       title,
       author: body.author ?? null,
       ext: "epub",
       filename,
-      path: filePath,
-      size_bytes: size,
+      path: storagePath,
+      size_bytes: buffer.byteLength,
       img_url: body.imgUrl ?? null,
       downloaded_at: new Date().toISOString(),
       sent_at: null,
     };
-    insertBook(row);
+    await insertBook(row);
 
     return NextResponse.json({ book: row });
   } catch (err) {

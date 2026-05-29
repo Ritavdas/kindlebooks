@@ -1,40 +1,23 @@
-import Database from "better-sqlite3";
-import path from "node:path";
-import fs from "node:fs";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-const DATA_DIR = process.env.DATA_DIR
-  ? path.resolve(process.env.DATA_DIR)
-  : process.cwd();
-const DB_PATH = path.join(DATA_DIR, "kindlebooks.db");
+const STORAGE_BUCKET = process.env.SUPABASE_LIBRARY_BUCKET || "library";
 
-let db: Database.Database | null = null;
+let client: SupabaseClient | null = null;
 
-export function getDb(): Database.Database {
-  if (db) return db;
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-  db = new Database(DB_PATH);
-  db.pragma("journal_mode = WAL");
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS books (
-      md5 TEXT PRIMARY KEY,
-      title TEXT NOT NULL,
-      author TEXT,
-      ext TEXT NOT NULL,
-      filename TEXT NOT NULL,
-      path TEXT NOT NULL,
-      size_bytes INTEGER,
-      img_url TEXT,
-      downloaded_at TEXT NOT NULL,
-      sent_at TEXT
+function getSupabase(): SupabaseClient {
+  if (client) return client;
+
+  const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } = process.env;
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error(
+      "Missing Supabase config. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY."
     );
-  `);
-  return db;
-}
+  }
 
-export function ensureLibraryDir(): string {
-  const dir = path.resolve(process.cwd(), process.env.LIBRARY_DIR || "./library");
-  fs.mkdirSync(dir, { recursive: true });
-  return dir;
+  client = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { persistSession: false },
+  });
+  return client;
 }
 
 export interface BookRow {
@@ -50,28 +33,66 @@ export interface BookRow {
   sent_at: string | null;
 }
 
-export function getBook(md5: string): BookRow | undefined {
-  return getDb().prepare("SELECT * FROM books WHERE md5 = ?").get(md5) as
-    | BookRow
-    | undefined;
+export async function getBook(md5: string): Promise<BookRow | null> {
+  const { data, error } = await getSupabase()
+    .from("books")
+    .select("*")
+    .eq("md5", md5)
+    .maybeSingle();
+
+  if (error) throw new Error(`Failed to fetch book: ${error.message}`);
+  return data as BookRow | null;
 }
 
-export function insertBook(row: BookRow): void {
-  getDb()
-    .prepare(
-      `INSERT OR REPLACE INTO books
-        (md5, title, author, ext, filename, path, size_bytes, img_url, downloaded_at, sent_at)
-       VALUES (@md5, @title, @author, @ext, @filename, @path, @size_bytes, @img_url, @downloaded_at, @sent_at)`
-    )
-    .run(row);
+export async function insertBook(row: BookRow): Promise<void> {
+  const { error } = await getSupabase().from("books").upsert(row, {
+    onConflict: "md5",
+  });
+
+  if (error) throw new Error(`Failed to save book: ${error.message}`);
 }
 
-export function markSent(md5: string, sentAt: string): void {
-  getDb().prepare("UPDATE books SET sent_at = ? WHERE md5 = ?").run(sentAt, md5);
+export async function markSent(md5: string, sentAt: string): Promise<void> {
+  const { error } = await getSupabase()
+    .from("books")
+    .update({ sent_at: sentAt })
+    .eq("md5", md5);
+
+  if (error) throw new Error(`Failed to mark book as sent: ${error.message}`);
 }
 
-export function listBooks(): BookRow[] {
-  return getDb()
-    .prepare("SELECT * FROM books ORDER BY downloaded_at DESC")
-    .all() as BookRow[];
+export async function listBooks(): Promise<BookRow[]> {
+  const { data, error } = await getSupabase()
+    .from("books")
+    .select("*")
+    .order("downloaded_at", { ascending: false });
+
+  if (error) throw new Error(`Failed to list books: ${error.message}`);
+  return (data || []) as BookRow[];
+}
+
+export function makeStoragePath(md5: string, filename: string): string {
+  return `books/${md5}/${filename}`;
+}
+
+export async function uploadBookFile(path: string, content: Buffer): Promise<void> {
+  const { error } = await getSupabase().storage
+    .from(STORAGE_BUCKET)
+    .upload(path, content, {
+      contentType: "application/epub+zip",
+      upsert: true,
+    });
+
+  if (error) throw new Error(`Failed to upload EPUB: ${error.message}`);
+}
+
+export async function downloadBookFile(path: string): Promise<Buffer> {
+  const { data, error } = await getSupabase().storage
+    .from(STORAGE_BUCKET)
+    .download(path);
+
+  if (error) throw new Error(`Failed to download EPUB from storage: ${error.message}`);
+
+  const arrayBuffer = await data.arrayBuffer();
+  return Buffer.from(arrayBuffer);
 }

@@ -1,11 +1,14 @@
 import nodemailer from "nodemailer";
 
 export interface SendArgs {
-  filePath: string;
   filename: string;
+  content: Buffer;
 }
 
-export async function sendToKindle({ filePath, filename }: SendArgs): Promise<void> {
+export async function sendToKindle({
+  content,
+  filename,
+}: SendArgs): Promise<void> {
   const {
     SMTP_HOST,
     SMTP_PORT,
@@ -34,6 +37,6 @@ export async function sendToKindle({ filePath, filename }: SendArgs): Promise<vo
     to: KINDLE_EMAIL,
     subject: filename,
     text: "Sent from Kindle Books.",
-    attachments: [{ filename, path: filePath }],
+    attachments: [{ filename, content }],
   });
 }
