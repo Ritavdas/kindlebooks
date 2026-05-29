@@ -1,0 +1,28 @@
+# Fly.io configuration for KindleBeam.
+# Change `app` to a globally-unique name, then run the deploy steps in the README.
+app = "kindlebeam"
+primary_region = "bom"
+
+[build]
+
+[env]
+  PORT = "3000"
+  DATA_DIR = "/data"
+  LIBRARY_DIR = "/data/library"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 0
+
+# Persistent disk for the SQLite DB (kindlebooks.db) and downloaded EPUBs.
+# Only one machine may mount this volume, so do not scale beyond 1 instance.
+[mounts]
+  source = "kindle_data"
+  destination = "/data"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

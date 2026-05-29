@@ -78,6 +78,51 @@ The homepage shows curated shelves so it isn't empty before you search:
 Click any cover to instantly search Anna's Archive for that title. Shelves are
 cached in-memory for 6 hours.
 
+## Deploying to Fly.io
+
+This app writes to disk (a SQLite database and downloaded EPUBs), so it needs a
+host with a **persistent filesystem** — it cannot run on serverless platforms
+like Vercel. [Fly.io](https://fly.io) works well: the included `Dockerfile` and
+`fly.toml` mount a persistent volume at `/data`, where both `kindlebooks.db`
+(`DATA_DIR`) and the EPUB library (`LIBRARY_DIR`) live.
+
+One-time setup (install the [flyctl](https://fly.io/docs/flyctl/install/) CLI first):
+
+```bash
+# 1. Pick a unique app name in fly.toml (the `app = "..."` line), then:
+fly launch --no-deploy --copy-config --name <your-app-name>
+
+# 2. Create the persistent volume (same name/region as fly.toml: kindle_data / bom)
+fly volumes create kindle_data --region bom --size 1   # 1 GB is plenty
+
+# 3. Set your secrets (these are NOT committed — do not put them in fly.toml)
+fly secrets set \
+  RAPIDAPI_KEY=... \
+  RAPIDAPI_HOST=annas-archive-api.p.rapidapi.com \
+  KINDLE_EMAIL=...@kindle.com \
+  SENDER_EMAIL=...@gmail.com \
+  SMTP_HOST=smtp.gmail.com SMTP_PORT=465 \
+  SMTP_USER=...@gmail.com SMTP_PASS="your-app-password" \
+  NYT_API_KEY=... \
+  NEXT_PUBLIC_SITE_URL=https://<your-app-name>.fly.dev
+```
+
+Then deploy (and re-deploy on every change):
+
+```bash
+fly deploy
+```
+
+Notes:
+
+- The SQLite database means **only one machine** may run at a time. `fly.toml`
+  keeps a single instance and lets it auto-stop when idle / auto-start on
+  request, so a personal deploy costs almost nothing.
+- Set `NEXT_PUBLIC_SITE_URL` to your real public URL so shared-link previews
+  (Open Graph / Twitter cards) point at the right host.
+- Data on the volume survives deploys and restarts. Back it up with
+  `fly ssh console` + `sqlite3` if it matters to you.
+
 ## Project structure
 
 ```
