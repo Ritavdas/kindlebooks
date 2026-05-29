@@ -122,22 +122,157 @@ export default function SearchPage() {
   }
 
   const marqueeItems = shelves.flatMap((s) => s.books).slice(0, 18);
+  const trendingShelf = shelves[0];
+  const featured = trendingShelf?.books?.[0] || null;
+  const pillItems = marqueeItems.slice(0, 6);
+
+  useEffect(() => {
+    if (
+      typeof window === "undefined" ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
+    const spot = document.getElementById("spotlight");
+    const fw = document.getElementById("featureWrap");
+    const feat = fw?.parentElement;
+    function onMove(e: MouseEvent) {
+      if (spot) {
+        spot.style.setProperty("--x", `${e.clientX}px`);
+        spot.style.setProperty("--y", `${e.clientY}px`);
+      }
+    }
+    function onFeat(e: MouseEvent) {
+      if (!fw || !feat) return;
+      const r = feat.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width - 0.5;
+      const y = (e.clientY - r.top) / r.height - 0.5;
+      fw.style.transform = `rotateY(${x * 10}deg) rotateX(${-y * 10}deg)`;
+    }
+    function onLeave() {
+      if (fw) fw.style.transform = "";
+    }
+    window.addEventListener("mousemove", onMove);
+    feat?.addEventListener("mousemove", onFeat);
+    feat?.addEventListener("mouseleave", onLeave);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      feat?.removeEventListener("mousemove", onFeat);
+      feat?.removeEventListener("mouseleave", onLeave);
+    };
+  }, [featured]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const items = Array.from(
+      document.querySelectorAll<HTMLElement>(".reveal")
+    );
+    if (reduce) {
+      items.forEach((el) => el.classList.add("in"));
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const el = entry.target as HTMLElement;
+            const siblings = Array.from(el.parentElement?.children || []);
+            const idx = siblings.indexOf(el);
+            window.setTimeout(() => el.classList.add("in"), idx * 70);
+            io.unobserve(el);
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+    items.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [shelves, results, searched, loading]);
 
   return (
     <div>
-      <section className="hero">
-        <span className="eyebrow">❦ search · collect · beam</span>
-        <h1 className="hero-title">
-          Every book you crave,
-          <br />
-          <em>beamed to your Kindle.</em>
-        </h1>
-        <p className="hero-sub">
-          Search a vast archive of EPUBs, build your private library, and send
-          any title to your Kindle in one tap.
-        </p>
+      {!searched && (
+        <section className="hero">
+          <div className="hero-copy">
+            <div className="kicker cin c1">Search · Collect · Beam</div>
+            <h1 className="hero-title cin c2">
+              The whole written world,
+              <br />
+              <em>on one shelf.</em>
+            </h1>
+            <p className="hero-sub cin c3">
+              Search a vast archive of EPUBs, curate your private library, and
+              beam any title to your Kindle in a single tap.
+            </p>
 
-        <form className="search-bar" onSubmit={onSubmit}>
+            <form className="search-bar cin c4" onSubmit={onSubmit}>
+              <input
+                type="text"
+                placeholder="Search a title, author or ISBN…"
+                value={query}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setQuery(v);
+                  if (v.trim() === "") resetToHome();
+                }}
+              />
+              <button type="submit" disabled={loading}>
+                {loading ? "Searching…" : "Search"}
+              </button>
+            </form>
+
+            {pillItems.length > 0 && (
+              <div className="pills cin c5">
+                {pillItems.map((b, i) => (
+                  <span
+                    className="pill"
+                    key={i}
+                    onClick={() => pickShelfBook(b)}
+                  >
+                    {b.title}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {featured && (
+            <div className="feature cin c3">
+              <div className="feature-wrap" id="featureWrap">
+                <button
+                  className={`featured${featured.coverUrl ? "" : " featured-fallback"}`}
+                  onClick={() => pickShelfBook(featured)}
+                  title={`${featured.title}${
+                    featured.author ? " — " + featured.author : ""
+                  }`}
+                >
+                  {featured.coverUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      className="featured-img"
+                      src={featured.coverUrl}
+                      alt={featured.title}
+                    />
+                  )}
+                  <span className="featured-tag">Trending now</span>
+                  <span className="featured-beam" aria-hidden="true" />
+                  <span className="featured-label">
+                    <span className="featured-kind">Editor’s pick</span>
+                    <span className="featured-title">{featured.title}</span>
+                    {featured.author && (
+                      <span className="featured-author">{featured.author}</span>
+                    )}
+                  </span>
+                </button>
+                <div className="feature-reflect" aria-hidden="true" />
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
+      {searched && (
+        <form className="search-bar search-compact" onSubmit={onSubmit}>
           <input
             type="text"
             placeholder="Search a title, author or ISBN…"
@@ -152,23 +287,7 @@ export default function SearchPage() {
             {loading ? "Searching…" : "Search"}
           </button>
         </form>
-
-        {!searched && marqueeItems.length > 0 && (
-          <div className="marquee">
-            <div className="marquee-track">
-              {[...marqueeItems, ...marqueeItems].map((b, i) => (
-                <span
-                  className="marquee-pill"
-                  key={i}
-                  onClick={() => pickShelfBook(b)}
-                >
-                  {b.title}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-      </section>
+      )}
 
       {error && <div className="error">{error}</div>}
 
@@ -177,16 +296,21 @@ export default function SearchPage() {
           {shelves.length === 0 && (
             <div className="spinner">Curating your shelves…</div>
           )}
-          {shelves.map((shelf) => (
+          {shelves.map((shelf, i) => (
             <section className="shelf" key={shelf.id}>
               <div className="section-head">
-                <h2 className="shelf-title">{shelf.title}</h2>
+                <h2 className="shelf-title">
+                  {shelf.title.replace(/^[^\p{L}\p{N}]+/u, "")}
+                  <span className="num">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                </h2>
                 <span className="section-hint">scroll →</span>
               </div>
               <div className="shelf-row">
                 {shelf.books.map((b, i) => (
                   <button
-                    className="shelf-card"
+                    className="shelf-card reveal"
                     key={`${shelf.id}-${i}`}
                     onClick={() => pickShelfBook(b)}
                     title={`${b.title}${b.author ? " — " + b.author : ""}`}
@@ -225,7 +349,7 @@ export default function SearchPage() {
           {results.map((r) => {
             const state = dl[r.md5] || "idle";
             return (
-              <div className="card" key={r.md5}>
+              <div className="card reveal" key={r.md5}>
                 <div className="cover-wrap">
                   {r.imgUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element

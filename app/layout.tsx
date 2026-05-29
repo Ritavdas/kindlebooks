@@ -42,21 +42,16 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700;9..144,900&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,ital,wght@9..144,0,300;9..144,0,400;9..144,0,500;9..144,0,600;9..144,1,400&family=Inter:wght@400;500;600&display=swap"
           rel="stylesheet"
         />
       </head>
       <body>
-        <div className="bg-aurora" aria-hidden="true">
-          <span className="blob blob-1" />
-          <span className="blob blob-2" />
-          <span className="blob blob-3" />
-        </div>
-        <div className="bg-grain" aria-hidden="true" />
+        <div className="spotlight" id="spotlight" aria-hidden="true" />
 
         <header className="header">
           <HomeLink className="brand">
-            <span className="brand-mark">&#10086;</span>
+            <span className="brand-mark">K</span>
             <span className="brand-text">
               Kindle<span className="brand-accent">Beam</span>
             </span>
@@ -64,16 +59,13 @@ export default function RootLayout({
           <nav className="nav">
             <HomeLink>Discover</HomeLink>
             <Link href="/library">Library</Link>
-            <span className="nav-status">
-              <span className="dot" /> live
-            </span>
           </nav>
         </header>
 
         <main className="main">{children}</main>
 
         <footer className="footer">
-          <span>Beamed with &#10086; &mdash; your books, anywhere.</span>
+          <span>Your books, anywhere.</span>
         </footer>
       </body>
     </html>
